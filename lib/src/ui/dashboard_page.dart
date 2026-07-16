@@ -1387,6 +1387,7 @@ class _ErrorPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final needsFolderAccess = error is CodexFolderAccessException;
     return Scaffold(
       body: Center(
         child: ConstrainedBox(
@@ -1396,14 +1397,18 @@ class _ErrorPage extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
-                  Icons.folder_off_outlined,
+                Icon(
+                  needsFolderAccess
+                      ? Icons.folder_open_outlined
+                      : Icons.folder_off_outlined,
                   size: 38,
                   color: AppColors.orange,
                 ),
                 const SizedBox(height: 18),
                 Text(
-                  'Codex data was not readable',
+                  needsFolderAccess
+                      ? 'Choose your Codex folder'
+                      : 'Codex data was not readable',
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 const SizedBox(height: 9),
@@ -1415,8 +1420,15 @@ class _ErrorPage extends StatelessWidget {
                 const SizedBox(height: 20),
                 FilledButton.icon(
                   onPressed: () => onRetry(),
-                  icon: const Icon(Icons.refresh_rounded, size: 17),
-                  label: const Text('Try again'),
+                  icon: Icon(
+                    needsFolderAccess
+                        ? Icons.folder_open_rounded
+                        : Icons.refresh_rounded,
+                    size: 17,
+                  ),
+                  label: Text(
+                    needsFolderAccess ? 'Choose ~/.codex' : 'Try again',
+                  ),
                 ),
               ],
             ),

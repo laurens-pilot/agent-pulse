@@ -33,11 +33,13 @@ flutter build macos --release
 - Codex Pulse opens those source files as read-only streams. It does not modify,
   move, migrate, or delete Codex data.
 - The app writes a small derived cache only under its own macOS Application
-  Support directory. The cache includes numeric metrics and source metadata,
-  but never prompt text, response text, tool input, or tool output.
-- The macOS app sandbox is intentionally disabled because this personal app
-  needs to read `~/.codex` without a file picker. No network dependency is used
-  by the dashboard.
+  Support directory inside its sandbox container. The cache includes numeric
+  metrics and source metadata, but never prompt text, response text, tool input,
+  or tool output.
+- The macOS App Sandbox is enabled. On first launch, choose `~/.codex` in the
+  system folder picker; the app stores a security-scoped bookmark and receives
+  read-only access on later launches. No network dependency is used by the
+  dashboard.
 
 See [docs/metrics.md](docs/metrics.md) for exact definitions and known limits.
 

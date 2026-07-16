@@ -1,7 +1,8 @@
 # Codex Pulse metric model
 
-Codex Pulse is a local, personal monitoring dashboard. It reads Codex data and
-stores only derived analytics in its own Application Support directory. It
+Codex Pulse is a local, personal monitoring dashboard. It reads Codex data
+through a user-approved, read-only security-scoped bookmark and stores only
+derived analytics in its sandbox container's Application Support directory. It
 never writes to `~/.codex` and never stores prompt or response text in its
 cache.
 

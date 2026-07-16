@@ -2,9 +2,48 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:codex_dashboard/src/data/codex_data_source.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  test(
+    'requests the sandbox-approved Codex root through the platform',
+    () async {
+      const channel = MethodChannel(CodexRootAccess.channelName);
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (call) async {
+            expect(call.method, CodexRootAccess.methodName);
+            return '/tmp/approved/.codex';
+          });
+      addTearDown(
+        () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(channel, null),
+      );
+
+      expect(
+        await const CodexRootAccess().resolveOrRequest(),
+        '/tmp/approved/.codex',
+      );
+    },
+  );
+
+  test('reports when sandbox folder access is cancelled', () async {
+    const channel = MethodChannel(CodexRootAccess.channelName);
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (_) async => null);
+    addTearDown(
+      () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, null),
+    );
+
+    expect(
+      const CodexRootAccess().resolveOrRequest(),
+      throwsA(isA<CodexFolderAccessException>()),
+    );
+  });
+
   test('counts history prompts and never caches chat text', () async {
     final temporary = await Directory.systemTemp.createTemp(
       'codex-pulse-test-',

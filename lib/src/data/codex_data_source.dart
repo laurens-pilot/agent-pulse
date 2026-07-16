@@ -3,22 +3,62 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
+import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../models/analytics.dart';
 
+class CodexFolderAccessException implements Exception {
+  const CodexFolderAccessException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
+}
+
+class CodexRootAccess {
+  const CodexRootAccess();
+
+  static const channelName = 'com.laurens.codexDashboard/codexRootAccess';
+  static const methodName = 'resolveOrRequestCodexRoot';
+  static const _channel = MethodChannel(channelName);
+
+  Future<String> resolveOrRequest() async {
+    try {
+      final root = await _channel.invokeMethod<String>(methodName);
+      if (root == null || root.isEmpty) {
+        throw const CodexFolderAccessException(
+          'Codex folder access is required. Select your ~/.codex folder to continue.',
+        );
+      }
+      return root;
+    } on PlatformException catch (error) {
+      throw CodexFolderAccessException(
+        error.message ??
+            'Read-only access to the selected Codex folder could not be granted.',
+      );
+    } on MissingPluginException {
+      throw const CodexFolderAccessException(
+        'The macOS Codex folder access service is unavailable.',
+      );
+    }
+  }
+}
+
 class CodexDataSource {
-  const CodexDataSource({this.codexRootOverride, this.cachePathOverride});
+  const CodexDataSource({
+    this.codexRootOverride,
+    this.cachePathOverride,
+    this.rootAccess = const CodexRootAccess(),
+  });
 
   final String? codexRootOverride;
   final String? cachePathOverride;
+  final CodexRootAccess rootAccess;
 
   Future<CodexDataset> load({bool forceRefresh = false}) async {
-    final home = Platform.environment['HOME'];
-    if (codexRootOverride == null && home == null) {
-      throw const FileSystemException('Could not locate the home directory.');
-    }
-    final root = codexRootOverride ?? '$home/.codex';
+    final root = codexRootOverride ?? await rootAccess.resolveOrRequest();
     final cachePath = cachePathOverride ?? await _defaultCachePath();
     return Isolate.run(
       () => _loadDataset(root, cachePath, forceRefresh: forceRefresh),
